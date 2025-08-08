@@ -1,7 +1,11 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input, TemplateRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { DatePipe } from '@angular/common';
 
+/**
+ * Componente de tabla reutilizable y tipada para Angular Standalone
+ * @template T Tipo de los datos de la tabla
+ */
 @Component({
   selector: 'app-table',
   standalone: true,
@@ -24,13 +28,13 @@ import { DatePipe } from '@angular/common';
             <td *ngFor="let col of columns" 
                 class="px-4 py-3"
                 [ngClass]="{ 'text-center': isAccionesColumn(col.header) }">
-              <ng-container *ngIf="!col.cellTemplate; else customCell">
-                {{ formatCell(row[col.field]) }}
-              </ng-container>
-              <ng-template #customCell>
-                <ng-container *ngTemplateOutlet="col.cellTemplate; context: { $implicit: row }"></ng-container>
-              </ng-template>
-            </td>
+              <ng-container *ngIf="!col.cellTemplate; else customCellTpl">
+      {{ formatCell(getCellValue(row, col.field)) }}
+    </ng-container>
+    <ng-template #customCellTpl>
+      <ng-container *ngTemplateOutlet="col.cellTemplate; context: getTemplateContext(row)"></ng-container>
+    </ng-template>
+  </td>
           </tr>
         </tbody>
       </table>
@@ -62,7 +66,7 @@ import { DatePipe } from '@angular/common';
     </div>
   `
 })
-export class TableComponent {
+export class TableComponent<T = unknown> {
   goToPage(page: number) {
     if (page >= 0 && page < this.totalPages) {
       this.currentPage = page;
@@ -96,8 +100,8 @@ export class TableComponent {
     // Reset page if data changes
     this.currentPage = 0;
   }
-  @Input() columns: Array<{ header: string; field: string; cellTemplate?: any }> = [];
-  @Input() rows: any[] = [];
+  @Input() columns: Array<{ header: string; field: string; cellTemplate?: TemplateRef<T> }> = [];
+  @Input() rows: T[] = [];
 
   constructor(private datePipe: DatePipe) {}
 
@@ -105,16 +109,22 @@ export class TableComponent {
     return header.trim().toLowerCase() === 'acciones';
   }
 
-  formatCell(value: any): string {
+  getCellValue(row: T, field: string): unknown {
+    return (row as Record<string, unknown>)[field];
+  }
+
+  formatCell(value: T[keyof T] | unknown): string {
     if (value instanceof Date) {
       return this.datePipe.transform(value, 'dd/MM/yyyy HH:mm:ss') || '';
     }
-
     if (typeof value === 'string' && !isNaN(Date.parse(value))) {
       const date = new Date(value);
       return this.datePipe.transform(date, 'dd/MM/yyyy HH:mm:ss') || '';
     }
+    return String(value ?? '');
+  }
 
-    return value;
+  getTemplateContext(row: T): any {
+    return { $implicit: row };
   }
 }

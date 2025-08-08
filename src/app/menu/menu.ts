@@ -1,7 +1,7 @@
 import { ViewChild, TemplateRef, AfterViewInit, Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Menu } from 'model/Menu';
+import { Menu } from 'models/menu.model';
 import { ApiService } from 'services/services-api';
 import { ConfirmDialogComponent } from '../shared/confirm-dialog.component';
 import { TableComponent } from '../shared/table.component';
@@ -19,7 +19,7 @@ export class MenuComponent implements AfterViewInit {
   @ViewChild('accionesTemplate', { static: false }) accionesTemplate!: TemplateRef<any>;
   @ViewChild('estadoBadge', { static: false }) estadoBadge!: TemplateRef<any>;
 
-  public tableColumns: Array<{ header: string; field: string; cellTemplate?: TemplateRef<any> }> = [
+  public tableColumns: Array<{ header: string; field: string; cellTemplate?: TemplateRef<Menu> }> = [
     { header: '', field: 'checkbox' },
     { header: 'Nombre', field: 'nombre' },
     { header: 'Ruta', field: 'url' },
@@ -36,6 +36,7 @@ export class MenuComponent implements AfterViewInit {
   toastTitle: string = '';
   toastMessage: string = '';
 
+  public tableRows: Menu[] = [];
   constructor(private menuService: ApiService) {}
 
   menus: Menu[] = [];
@@ -114,8 +115,12 @@ export class MenuComponent implements AfterViewInit {
         newId = (lastMenu.idMenu || 0) + 1;
       }
       this.menuObject.idMenu = newId;
-      // Clonar el objeto y remover fechas antes de enviar
-      const { fechaCreacion, fechaModificacion, ...menuToSend } = this.menuObject;
+      // Clonar el objeto y enviar todas las propiedades requeridas por Menu
+      const menuToSend: Menu = {
+        ...this.menuObject,
+        fechaCreacion: this.menuObject.fechaCreacion,
+        fechaModificacion: this.menuObject.fechaModificacion
+      };
       this.menuService.post<Menu>('menu/save', menuToSend).subscribe({
         next: (data) => {
           this.loadMenus();

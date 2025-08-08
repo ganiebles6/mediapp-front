@@ -12,33 +12,33 @@ export class ApiService {
   constructor(private http: HttpClient) {}
 
   // GET con retorno genérico y soporte para parámetros opcionales
-  get<T>(path: string, params?: any): Observable<T> {
+  get<T>(path: string, params?: Record<string, string | number | boolean>): Observable<T> {
     let httpParams = new HttpParams();
     if (params) {
-      for (const key in params) {
-        httpParams = httpParams.set(key, params[key]);
-      }
+      Object.entries(params).forEach(([key, value]) => {
+        httpParams = httpParams.set(key, String(value));
+      });
     }
     return this.http.get<T>(`${this.baseUrl}/${path}`, { params: httpParams });
   }
 
   // POST con cuerpo genérico
-  post<T>(path: string, body: any): Observable<T> {
+  post<T>(path: string, body: T): Observable<T> {
     return this.http.post<T>(`${this.baseUrl}/${path}`, body);
   }
 
   // PUT con cuerpo genérico
-  put<T>(path: string, body: any): Observable<T> {
+  put<T>(path: string, body: T): Observable<T> {
     return this.http.put<T>(`${this.baseUrl}/${path}`, body);
   }
 
   // DELETE (puede incluir parámetros si es necesario)
-  delete<T>(path: string, params?: any): Observable<T> {
+  delete<T>(path: string, params?: Record<string, string | number | boolean>): Observable<T> {
     let httpParams = new HttpParams();
     if (params) {
-      for (const key in params) {
-        httpParams = httpParams.set(key, params[key]);
-      }
+      Object.entries(params).forEach(([key, value]) => {
+        httpParams = httpParams.set(key, String(value));
+      });
     }
     return this.http.delete<T>(`${this.baseUrl}/${path}`, { params: httpParams });
   }
