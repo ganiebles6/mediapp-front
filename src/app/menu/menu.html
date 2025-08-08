@@ -1,0 +1,172 @@
+<app-toast 
+  [visible]="toastVisible" 
+  [type]="toastType === 'success' ? 'success' : 'error'" 
+  [title]="toastTitle" 
+  [message]="toastMessage" 
+  (closed)="toastVisible = false">
+</app-toast>
+<div class="p-6 bg-white shadow-lg rounded-2xl max-w-7xl mx-auto">
+
+  <!-- 🔝 Topbar: Búsqueda + Botón -->
+  <div class="flex justify-between items-center mb-6 flex-wrap gap-4">
+    <!-- Búsqueda -->
+    <div class="relative w-full max-w-sm">
+      <input
+        type="text"
+        [(ngModel)]="filtro"
+        placeholder="Buscar menú..."
+        class="w-full border-0 border-b-2 border-gray-300 focus:ring-0 focus:border-teal-900 py-2 pl-10 placeholder-gray-400"
+      />
+      <svg class="w-5 h-5 absolute left-2.5 top-2.5 text-gray-400 pointer-events-none" fill="none" stroke="currentColor"
+           stroke-width="2" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round"
+              d="M21 21l-4.35-4.35M16.65 16.65A7.5 7.5 0 1 0 3 10a7.5 7.5 0 0 0 13.65 6.65z" />
+      </svg>
+    </div>
+
+    <!-- Botón agregar menú -->
+    <button
+      (click)="showFormMenu = true" class="flex items-center gap-2 bg-teal-900 text-white px-4 py-2 rounded-xl shadow-md hover:bg-teal-800 transition"
+    >
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+      </svg>
+      <span>Nuevo Menú</span>
+    </button>
+  </div>
+
+  <!-- 📋 Tabla -->
+  <ng-template #estadoBadge let-menu>
+    <span [ngClass]="menu.estado ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'" class="px-2 py-1 rounded-full text-xs font-semibold">
+      {{ menu.estado ? 'Activo' : 'Inactivo' }}
+    </span>
+  </ng-template>
+  <app-table [columns]="tableColumns" [rows]="menus"></app-table>
+  <ng-template #accionesTemplate let-menu>
+    <div class="flex justify-center space-x-2">
+      <button (click)="editMenu(menu)" title="Editar" class="text-blue-600 hover:text-blue-800">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
+          <path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
+        </svg>
+      </button>
+      <button (click)="deleteMenu(menu)" title="Eliminar" class="text-red-600 hover:text-red-800">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
+          <path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
+        </svg>
+      </button>
+    </div>
+  </ng-template>
+</div>
+
+<!-- modal.component.html -->
+<div *ngIf="showFormMenu" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+  <div class="bg-white rounded-2xl p-8 w-full max-w-md shadow-lg">
+    <h2 class="text-xl font-bold mb-6">{{ editMode ? 'Editar Menú' : 'Registrar Menú' }}</h2>
+
+    <form>
+
+      <!-- Nombre -->
+      <div class="relative mb-6">
+        <input
+          type="text"
+          id="nombre"
+          name="nombre"
+          placeholder=" "
+          required
+          [(ngModel)]="menuObject.nombre"
+          class="peer w-full border-b-2 border-gray-300 focus:border-teal-900 focus:outline-none bg-transparent pt-5 pb-1"
+        />
+        <label
+          for="nombre"
+          class="absolute left-0 top-1 text-gray-500 text-sm transition-all peer-placeholder-shown:top-5 peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-400 peer-focus:top-1 peer-focus:text-sm peer-focus:text-teal-900"
+        >
+          Nombre del Menú
+        </label>
+      </div>
+
+
+
+      <!-- Descripción (textarea) -->
+      <div class="relative mb-6">
+        <textarea
+          id="descripcion"
+          name="descripcion"
+          rows="3"
+          placeholder=" "
+          [(ngModel)]="menuObject.descripcion"
+          class="peer w-full border-b-2 border-gray-300 focus:border-teal-900 focus:outline-none bg-transparent pt-5 pb-1 resize-none"
+        ></textarea>
+        <label
+          for="descripcion"
+          class="absolute left-0 top-1 text-gray-500 text-sm transition-all peer-placeholder-shown:top-5 peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-400 peer-focus:top-1 peer-focus:text-sm peer-focus:text-teal-900"
+        >
+          Descripción
+        </label>
+      </div>
+
+      <!-- Ruta -->
+      <div class="relative mb-6">
+        <input
+          type="text"
+          id="ruta"
+          name="ruta"
+          placeholder=" "
+          [(ngModel)]="menuObject.url"
+          class="peer w-full border-b-2 border-gray-300 focus:border-teal-900 focus:outline-none bg-transparent pt-5 pb-1"
+        />
+        <label
+          for="ruta"
+          class="absolute left-0 top-1 text-gray-500 text-sm transition-all peer-placeholder-shown:top-5 peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-400 peer-focus:top-1 peer-focus:text-sm peer-focus:text-teal-900"
+        >
+          Ruta
+        </label>
+      </div>
+
+      <!-- Estado (checkbox) -->
+      <div class="flex items-center mb-6 select-none">
+        <input
+          id="estado"
+          name="estado"
+          type="checkbox"
+          [(ngModel)]="menuObject.estado"
+          class="accent-teal-900 w-5 h-5 rounded border-gray-300 focus:ring-2 focus:ring-teal-800 transition-all duration-150 shadow-sm mr-3"
+        />
+        <label for="estado" class="text-gray-700 text-base font-medium cursor-pointer">Activo</label>
+      </div>
+
+      <!-- Icono -->
+      <div class="relative mb-6">
+        <input
+          type="text"
+          id="icono"
+          name="icono"
+          placeholder=" "
+          [(ngModel)]="menuObject.icono"
+          class="peer w-full border-b-2 border-gray-300 focus:border-teal-900 focus:outline-none bg-transparent pt-5 pb-1"
+        />
+        <label
+          for="icono"
+          class="absolute left-0 top-1 text-gray-500 text-sm transition-all peer-placeholder-shown:top-5 peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-400 peer-focus:top-1 peer-focus:text-sm peer-focus:text-teal-900"
+        >
+          Icono (SVG o nombre)
+        </label>
+      </div>
+
+      <!-- Botones -->
+      <div class="flex justify-end gap-3 mt-6">
+        <button  (click)="showFormMenu = false; editMode = false" type="button" class="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400">Cancelar</button>
+        <button type="button" (click)="showConfirm = true" class="px-4 py-2 bg-teal-900 text-white rounded hover:bg-teal-900">{{ editMode ? 'Actualizar' : 'Guardar' }}</button>
+          <!-- Confirmación Guardar -->
+          <app-confirm-dialog
+            [visible]="showConfirm"
+            title="Confirmar guardado"
+            message="¿Deseas guardar este menú?"
+            (confirm)="onConfirmSave()"
+            (cancel)="showConfirm = false"
+          ></app-confirm-dialog>
+      </div>
+    </form>
+  </div>
+</div>
+
+

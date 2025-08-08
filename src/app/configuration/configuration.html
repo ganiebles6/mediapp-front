@@ -1,0 +1,42 @@
+<nav class="text-sm font-medium text-center text-gray-500 border-b border-gray-200 dark:text-gray-400 dark:border-gray-700">
+  <ul class="flex flex-wrap -mb-px">
+    <li class="me-2">
+      <a
+        routerLink="/configuration/menu"
+        routerLinkActive="text-teal-800 border-teal-900 dark:text-teal-700 dark:border-teal-900"
+        class="inline-block p-4 border-b-2 border-transparent rounded-t-lg hover:text-gray-600 hover:border-gray-300 dark:hover:text-gray-300"
+        [routerLinkActiveOptions]="{ exact: true }"
+      >Menu</a>
+    </li>
+    <li class="me-2">
+    <a
+        routerLink="/configuration/rol"
+        routerLinkActive="text-teal-800 border-teal-900 dark:text-teal-700 dark:border-teal-900"
+        class="inline-block p-4 border-b-2 border-transparent rounded-t-lg hover:text-gray-600 hover:border-gray-300 dark:hover:text-gray-300"
+        [routerLinkActiveOptions]="{ exact: true }"
+    >
+        Rol
+    </a>
+    </li>
+    <li class="me-2">
+      <a
+        routerLink="/settings"
+        routerLinkActive="text-teal-600 border-teal-600 dark:text-teal-500 dark:border-teal-500"
+        class="inline-block p-4 border-b-2 border-transparent rounded-t-lg hover:text-gray-600 hover:border-gray-300 dark:hover:text-gray-300"
+        [routerLinkActiveOptions]="{ exact: true }"
+      >Settings</a>
+    </li>
+    <li class="me-2">
+      <a
+        routerLink="/contacts"
+        routerLinkActive="text-teal-600 border-teal-600 dark:text-teal-500 dark:border-teal-500"
+        class="inline-block p-4 border-b-2 border-transparent rounded-t-lg hover:text-gray-600 hover:border-gray-300 dark:hover:text-gray-300"
+        [routerLinkActiveOptions]="{ exact: true }"
+      >Contacts</a>
+    </li>
+  </ul>
+</nav>
+
+<main class="p-6">
+    <router-outlet></router-outlet>
+</main>
