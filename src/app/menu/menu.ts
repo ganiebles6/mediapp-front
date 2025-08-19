@@ -1,20 +1,25 @@
+import { Rol } from 'models/rol.model';
 import { ViewChild, TemplateRef, AfterViewInit, Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Menu } from 'models/menu.model';
-import { ApiService } from 'services/services-api';
+import { MenuService } from './menu.service';
 import { ConfirmDialogComponent } from '../shared/confirm-dialog.component';
 import { TableComponent } from '../shared/table.component';
+import { GlobalFilterComponent } from '../shared/global-filter.component';
 import { ToastComponent } from 'app/shared/toast.component';
+import { RolService } from 'app/rol/rol.service';
 
 @Component({
   selector: 'app-menu',
-  imports: [CommonModule, FormsModule, ConfirmDialogComponent, TableComponent, ToastComponent],
+  imports: [CommonModule, FormsModule, ConfirmDialogComponent, TableComponent, ToastComponent, GlobalFilterComponent],
   standalone: true,
   templateUrl: './menu.html',
   styleUrl: './menu.css'
 })
 export class MenuComponent implements AfterViewInit {
+
+  menusFiltrados: Menu[] = [];
 
   @ViewChild('accionesTemplate', { static: false }) accionesTemplate!: TemplateRef<any>;
   @ViewChild('estadoBadge', { static: false }) estadoBadge!: TemplateRef<any>;
@@ -37,7 +42,8 @@ export class MenuComponent implements AfterViewInit {
   toastMessage: string = '';
 
   public tableRows: Menu[] = [];
-  constructor(private menuService: ApiService) {}
+  roles: Rol[] = [];
+  constructor(private menuService: MenuService, private rolService: RolService) {}
 
   menus: Menu[] = [];
   filtro: string = "";
@@ -71,6 +77,16 @@ export class MenuComponent implements AfterViewInit {
 
   ngOnInit(): void {
     this.loadMenus();
+    this.menusFiltrados = [...this.menus];
+    this.rolService.loadRoles().subscribe(() => {
+      this.roles = this.rolService.roles;
+    });
+  }
+
+  openNewMenu() {
+ 
+    this.resetMenuForm();
+    this.showFormMenu = true;
   }
 
   onConfirmSave() {
@@ -80,9 +96,11 @@ export class MenuComponent implements AfterViewInit {
   }
 
   loadMenus(): void {
-    this.menuService.get<Menu[]>("menu/getAll").subscribe({
+    this.menuService.getAll().subscribe({
       next: (data) => {
         this.menus = data;
+        // No aplicar filtros automáticamente
+        this.menusFiltrados = [...this.menus];
       },
       error: (err) => {
         console.error('Error al cargar los menús', err);
@@ -91,9 +109,9 @@ export class MenuComponent implements AfterViewInit {
   }
 
   saveMenu() {
+    // Limpiar los roles antes de enviar
     if (this.editMode) {
-      // Actualizar menú existente
-      this.menuService.put<Menu>(`menu/modify/${this.menuObject.idMenu}`, this.menuObject).subscribe({
+      this.menuService.update(this.menuObject).subscribe({
         next: (data) => {
           this.loadMenus();
           this.toastType = 'success';
@@ -101,6 +119,8 @@ export class MenuComponent implements AfterViewInit {
           this.toastMessage = 'Menú actualizado correctamente';
           this.toastVisible = true;
           this.resetMenuForm();
+          // No aplicar filtros automáticamente
+          this.menusFiltrados = [...this.menus];
         },
         error: (err) => {
           console.error('Error al actualizar menu', err);
@@ -108,23 +128,23 @@ export class MenuComponent implements AfterViewInit {
       });
     } else {
       // Crear nuevo menú
-      // Generar nuevo id sumando 1 al último id de la lista
       let newId = 1;
       if (this.menus.length > 0) {
         const lastMenu = this.menus[this.menus.length - 1];
         newId = (lastMenu.idMenu || 0) + 1;
       }
       this.menuObject.idMenu = newId;
-      // Clonar el objeto y enviar todas las propiedades requeridas por Menu
       const menuToSend: Menu = {
         ...this.menuObject,
         fechaCreacion: this.menuObject.fechaCreacion,
         fechaModificacion: this.menuObject.fechaModificacion
       };
-      this.menuService.post<Menu>('menu/save', menuToSend).subscribe({
+      this.menuService.save(menuToSend).subscribe({
         next: (data) => {
           this.loadMenus();
           this.resetMenuForm();
+          // No aplicar filtros automáticamente
+          this.menusFiltrados = [...this.menus];
         },
         error: (err) => {
           console.error('Error al crear menu', err);
@@ -134,15 +154,23 @@ export class MenuComponent implements AfterViewInit {
   }
 
   editMenu(menu: Menu) {
-    this.menuObject = { ...menu };
+    let selectedRoles: Rol[] = [];
+    if (Array.isArray(menu.roles) && menu.roles.length > 0) {
+      selectedRoles = menu.roles.map(rolMenu =>
+        this.roles.find(r => r.idRol === rolMenu.idRol)
+      ).filter(Boolean) as Rol[];
+    }
+    this.menuObject = { ...menu, roles: selectedRoles };
     this.editMode = true;
     this.showFormMenu = true;
   }
 
   deleteMenu(menu: Menu) {
-    this.menuService.delete<Menu>(`menu/delete/${menu.idMenu}`).subscribe({
+    this.menuService.deleteMenu(menu.idMenu).subscribe({
       next: (data) => {
         this.loadMenus();
+        // No aplicar filtros automáticamente
+        this.menusFiltrados = [...this.menus];
       },
       error: (err) => {
         console.error('Error al eliminar menu', err);
@@ -163,5 +191,38 @@ export class MenuComponent implements AfterViewInit {
       roles: []
     };
     this.editMode = false;
+  }
+
+    // Elimina un rol de los roles seleccionados
+  removeRol(rol: Rol) {
+    this.menuObject.roles = this.menuObject.roles.filter(r => r.idRol !== rol.idRol);
+  }
+
+  // Verifica si un rol ya está seleccionado
+  isRolSelected(rol: Rol): boolean {
+    return Array.isArray(this.menuObject?.roles) && this.menuObject.roles.some((r: Rol) => r.idRol === rol.idRol);
+  }
+  // Maneja el cambio de selección múltiple de roles
+  onRolesChange(selected: Rol[]) {
+    console.log('Selected roles:', selected);
+    this.menuObject.roles = selected;
+  }
+
+  // Compara dos roles por idRol para el select múltiple
+  compareRoles(r1: Rol, r2: Rol): boolean {
+    return r1 && r2 ? r1.idRol === r2.idRol : r1 === r2;
+  }
+
+  aplicarFiltro(filtros: any) {
+    this.menusFiltrados = this.menus.filter(menu => {
+      // Filtrado por fecha
+      const fechaValida = (!filtros.fechaInicio || new Date(menu.fechaCreacion) >= new Date(filtros.fechaInicio)) &&
+                         (!filtros.fechaFin || new Date(menu.fechaCreacion) <= new Date(filtros.fechaFin));
+      // Filtrado por estado
+      const estadoValido = filtros.estado === 'todos' || (menu.estado ? 'activo' : 'inactivo') === filtros.estado;
+      // Filtrado por texto
+      const textoValido = !filtros.texto || menu.nombre.toLowerCase().includes(filtros.texto.toLowerCase());
+      return fechaValida && estadoValido && textoValido;
+    });
   }
 }
